@@ -45,76 +45,234 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="lfvcr">LFVCR<a class="anchor" aria-label="anchor" href="#lfvcr"></a>
 </h1></div>
-<p>LFVCR (<strong>L</strong>atent <strong>F</strong>actor <strong>V</strong>arying-<strong>C</strong>oefficient <strong>R</strong>egression) is an R package for regression with high-dimensional predictors whose effects may vary with a low-dimensional latent structure. It estimates latent factors, constructs factor-by-feature interactions, and fits the expanded design with sparse group lasso.</p>
-<p>Two factor-extraction methods are available:</p>
+<p>LFVCR (<strong>L</strong>atent <strong>F</strong>actor <strong>V</strong>arying-<strong>C</strong>oefficient <strong>R</strong>egression) is an R package for continuous and binary outcomes with high-dimensional predictors. It estimates a low-dimensional latent structure, constructs factor-by-predictor interactions, and fits the expanded design using cross-validated sparse group lasso.</p>
+<div class="section level2">
+<h2 id="method-overview">Method Overview<a class="anchor" aria-label="anchor" href="#method-overview"></a>
+</h2>
+<p>Both LFVCR implementations follow the same workflow:</p>
+<ol style="list-style-type: decimal">
+<li>Center <code>X</code> without scaling its columns.</li>
+<li>Estimate the number of latent factors, <code>p_hat</code>, with <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>. The default criterion is <code>"BIC3"</code>.</li>
+<li>Extract exactly <code>p_hat</code> factors:
 <ul>
 <li>
-<code><a href="reference/LF_VCR.html">LF_VCR()</a></code> first estimates the number of factors (<code>p_hat</code>) with <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>, then extracts those factors using unscaled PCA (<code>scale. = FALSE</code>).</li>
+<code><a href="reference/LF_VCR.html">LF_VCR()</a></code> uses PCA with <code>scale. = FALSE</code>.</li>
 <li>
-<code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> uses the same <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code> estimate as the width of a single-hidden-layer autoencoder, so <code>number.K</code> does not need to be supplied.</li>
+<code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> uses a single-hidden-layer H2O autoencoder with <code>hidden = p_hat</code>.</li>
 </ul>
+</li>
+<li>Construct every predictor-by-factor interaction.</li>
+<li>Combine the interactions, original predictors, and optional covariates.</li>
+<li>Fit Gaussian or binomial sparse group lasso with cross-validation.</li>
+</ol>
+<p><code>p_hat</code> is estimated automatically in both functions. There is no <code>number.K</code> argument.</p>
+<table class="table">
+<thead><tr>
+<th>Function</th>
+<th>Factor extraction</th>
+<th>Supported outcomes</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="reference/LF_VCR.html">LF_VCR()</a></code></td>
+<td>PCA without scaling</td>
+<td>Continuous and binary</td>
+</tr>
+<tr>
+<td><code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code></td>
+<td>H2O autoencoder</td>
+<td>Continuous and binary</td>
+</tr>
+</tbody>
+</table>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># If needed: install.packages("remotes")</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ruofan-wang/LFVCR"</span><span class="op">)</span></span></code></pre></div>
+<p>The package dependencies are installed automatically. <code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> also requires Java because it starts or reuses a local H2O cluster.</p>
 </div>
 <div class="section level2">
-<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+<h2 id="example-data">Example Data<a class="anchor" aria-label="anchor" href="#example-data"></a>
 </h2>
+<p>The examples below use a simulated data set with two latent factors and two adjustment covariates.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ruofan-wang.github.io/LFVCR/">LFVCR</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">120</span></span>
-<span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">30</span></span>
+<span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">24</span></span>
+<span></span>
 <span><span class="va">true_factors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="fl">2</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
 <span><span class="va">loadings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">p</span> <span class="op">*</span> <span class="fl">2</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="va">p</span><span class="op">)</span></span>
 <span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">true_factors</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">loadings</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="va">p</span>, sd <span class="op">=</span> <span class="fl">0.35</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
-<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="va">true_factors</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="va">true_factors</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/LF_VCR.html">LF_VCR</a></span><span class="op">(</span></span>
+<span><span class="va">covariate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
+<span>  age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>,</span>
+<span>  sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fl">0.5</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><code>X</code> must be a numeric matrix with observations in rows and predictors in columns. <code>covariate</code>, when supplied, must also be numeric and have the same number of rows as <code>X</code>.</p>
+</div>
+<div class="section level2">
+<h2 id="continuous-outcome">Continuous Outcome<a class="anchor" aria-label="anchor" href="#continuous-outcome"></a>
+</h2>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">y_continuous</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fl">1.2</span> <span class="op">*</span> <span class="va">true_factors</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">-</span></span>
+<span>  <span class="fl">0.7</span> <span class="op">*</span> <span class="va">true_factors</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span></span>
+<span>  <span class="fl">0.3</span> <span class="op">*</span> <span class="va">covariate</span><span class="op">[</span>, <span class="st">"age"</span><span class="op">]</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_pca</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/LF_VCR.html">LF_VCR</a></span><span class="op">(</span></span>
 <span>  X <span class="op">=</span> <span class="va">X</span>,</span>
-<span>  y <span class="op">=</span> <span class="va">y</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y_continuous</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  kmax <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">fit</span><span class="op">$</span><span class="va">p_hat</span></span>
-<span><span class="va">fit</span><span class="op">$</span><span class="va">beta</span></span></code></pre></div>
-<p>For a binary outcome, set <code>categorical = TRUE</code> and provide an outcome with exactly two distinct values. The second factor level is modeled as 1 and the level order is returned in <code>outcome_levels</code>. Additional adjustment variables can be supplied through <code>covariate</code>.</p>
+<span><span class="va">fit_pca</span><span class="op">$</span><span class="va">p_hat</span></span>
+<span><span class="va">fit_pca</span><span class="op">$</span><span class="va">beta</span></span></code></pre></div>
+<p>Use the autoencoder version with the same arguments. <code>p_hat</code> is still estimated by <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>; it becomes the autoencoder hidden-layer width.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_ae</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/LF_VCR_ae.html">LF_VCR_ae</a></span><span class="op">(</span></span>
+<span>  X <span class="op">=</span> <span class="va">X</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y_continuous</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
+<span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  kmax <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_ae</span><span class="op">$</span><span class="va">p_hat</span></span>
+<span><span class="va">fit_ae</span><span class="op">$</span><span class="va">beta</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
+<h2 id="binary-outcome">Binary Outcome<a class="anchor" aria-label="anchor" href="#binary-outcome"></a>
+</h2>
+<p>Set <code>categorical = TRUE</code> and supply an outcome with exactly two observed levels. LFVCR maps the first factor level to 0 and the second factor level to 1. Set the factor levels explicitly when the positive class matters.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">probability</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span></span>
+<span>  <span class="va">true_factors</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">-</span></span>
+<span>  <span class="fl">0.8</span> <span class="op">*</span> <span class="va">true_factors</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span></span>
+<span>  <span class="fl">0.2</span> <span class="op">*</span> <span class="va">covariate</span><span class="op">[</span>, <span class="st">"sex"</span><span class="op">]</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">y_binary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="va">probability</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span>, <span class="st">"case"</span>, <span class="st">"control"</span><span class="op">)</span>,</span>
+<span>  levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"control"</span>, <span class="st">"case"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_binary</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/LF_VCR.html">LF_VCR</a></span><span class="op">(</span></span>
+<span>  X <span class="op">=</span> <span class="va">X</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y_binary</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
+<span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  kmax <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span>,</span>
+<span>  categorical <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_binary</span><span class="op">$</span><span class="va">outcome_levels</span>  <span class="co"># "control" is 0; "case" is 1</span></span>
+<span><span class="va">fit_binary</span><span class="op">$</span><span class="va">beta</span></span></code></pre></div>
+<p>The same binary-outcome call works with <code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code>:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_binary_ae</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/LF_VCR_ae.html">LF_VCR_ae</a></span><span class="op">(</span></span>
+<span>  X <span class="op">=</span> <span class="va">X</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y_binary</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
+<span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  kmax <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span>,</span>
+<span>  categorical <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Binary cross-validation folds are stratified by outcome level.</p>
+</div>
+<div class="section level2">
+<h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
 </h2>
 <table class="table">
 <colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
+<col width="50%">
+<col width="50%">
 </colgroup>
 <thead><tr>
-<th>Function</th>
-<th>Latent-factor method</th>
-<th>Model</th>
+<th>Argument</th>
+<th>Description</th>
 </tr></thead>
 <tbody>
 <tr>
-<td><code><a href="reference/LF_VCR.html">LF_VCR()</a></code></td>
-<td>PCA without scaling; <code>p_hat</code> estimated by GrFA</td>
-<td>Sparse group lasso</td>
+<td><code>X</code></td>
+<td>Numeric <code>n</code> by <code>p</code> predictor matrix. Missing or infinite values are not allowed.</td>
 </tr>
 <tr>
-<td><code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code></td>
-<td>H2O autoencoder</td>
-<td>Sparse group lasso</td>
+<td><code>y</code></td>
+<td>Numeric response for a continuous model, or a two-level response for a binary model.</td>
+</tr>
+<tr>
+<td><code>covariate</code></td>
+<td>Optional numeric adjustment matrix with <code>n</code> rows.</td>
+</tr>
+<tr>
+<td><code>nfold</code></td>
+<td>Number of cross-validation folds; must be between 2 and <code>n</code>.</td>
+</tr>
+<tr>
+<td><code>kmax</code></td>
+<td>Maximum factor count considered by <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>; default is 8.</td>
+</tr>
+<tr>
+<td><code>factor_criterion</code></td>
+<td>Factor-number criterion: <code>PC1</code>, <code>PC2</code>, <code>PC3</code>, <code>IC1</code>, <code>IC2</code>, <code>IC3</code>, <code>AIC3</code>, <code>BIC3</code>, <code>ER</code>, or <code>GR</code>.</td>
+</tr>
+<tr>
+<td><code>categorical</code></td>
+<td>Use <code>FALSE</code> for a Gaussian model and <code>TRUE</code> for a binomial model.</td>
 </tr>
 </tbody>
 </table>
-<p><code><a href="reference/LF_VCR.html">LF_VCR()</a></code> returns the estimated <code>p_hat</code>, PCA factors, PCA fit, cross-validated sparse group lasso model, and coefficients at <code>lambda.min</code>. <code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> returns the same <code>p_hat</code> together with the corresponding autoencoder and regression results. After factor extraction, both functions use the same factor-by-feature interactions, group assignments, and Gaussian/binomial model fitting code.</p>
+</div>
+<div class="section level2">
+<h2 id="returned-values">Returned Values<a class="anchor" aria-label="anchor" href="#returned-values"></a>
+</h2>
+<p>Both functions return:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Value</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>p_hat</code></td>
+<td>Factor count estimated by <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>.</td>
+</tr>
+<tr>
+<td><code>factors</code></td>
+<td>Extracted <code>n</code> by <code>p_hat</code> factor matrix.</td>
+</tr>
+<tr>
+<td><code>model</code></td>
+<td>Cross-validated <code>sparsegl</code> model.</td>
+</tr>
+<tr>
+<td><code>beta</code></td>
+<td>Coefficients evaluated at <code>lambda.min</code>.</td>
+</tr>
+<tr>
+<td><code>outcome_levels</code></td>
+<td>Binary level order; <code>NULL</code> for a continuous model.</td>
+</tr>
+</tbody>
+</table>
+<p><code><a href="reference/LF_VCR.html">LF_VCR()</a></code> additionally returns the fitted <code>pca</code> object. <code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> additionally returns the fitted H2O <code>autoencoder</code> object. If <code>p_hat</code> is zero, factor extraction is skipped and the model is fitted with the original predictors and optional covariates.</p>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>

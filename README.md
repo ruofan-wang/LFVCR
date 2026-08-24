@@ -8,8 +8,9 @@ lasso.
 
 Two factor-extraction methods are available:
 
-- `LF_VCR()` estimates factors with Principal Orthogonal complEment Thresholding
-  (POET).
+- `LF_VCR()` first estimates the number of factors (`p_hat`) with
+  `GrFA::est_num()`, then extracts those factors using unscaled PCA
+  (`scale. = FALSE`).
 - `LF_VCR_ae()` estimates factors with a single-hidden-layer autoencoder.
 
 ## Installation
@@ -25,19 +26,23 @@ remotes::install_github("ruofan-wang/LFVCR")
 library(LFVCR)
 
 set.seed(1)
-n <- 100
-p <- 20
-X <- matrix(rnorm(n * p), nrow = n, ncol = p)
-y <- 0.8 * X[, 1] - 0.5 * X[, 2] + rnorm(n)
+n <- 120
+p <- 30
+true_factors <- matrix(rnorm(n * 2), nrow = n)
+loadings <- matrix(rnorm(p * 2), nrow = p)
+X <- true_factors %*% t(loadings) +
+  matrix(rnorm(n * p, sd = 0.35), nrow = n)
+y <- true_factors[, 1] - 0.5 * true_factors[, 2] + rnorm(n)
 
 fit <- LF_VCR(
   X = X,
   y = y,
-  number.K = 2,
   nfold = 5,
-  matrix = "vad"
+  kmax = 8,
+  factor_criterion = "BIC3"
 )
 
+fit$p_hat
 fit$beta
 ```
 
@@ -49,11 +54,12 @@ through `covariate`.
 
 | Function | Latent-factor method | Model |
 |---|---|---|
-| `LF_VCR()` | POET factor model | Sparse group lasso |
+| `LF_VCR()` | PCA without scaling; `p_hat` estimated by GrFA | Sparse group lasso |
 | `LF_VCR_ae()` | H2O autoencoder | Sparse group lasso |
 
-Both functions return the cross-validated sparse group lasso model and its
-coefficients at `lambda.min`.
+`LF_VCR()` returns the estimated `p_hat`, PCA factors, PCA fit, cross-validated
+sparse group lasso model, and coefficients at `lambda.min`. `LF_VCR_ae()`
+returns the corresponding autoencoder and regression results.
 
 ## Documentation
 

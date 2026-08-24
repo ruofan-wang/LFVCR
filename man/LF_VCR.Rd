@@ -2,15 +2,15 @@
 % Please edit documentation in R/LF_VCR.R
 \name{LF_VCR}
 \alias{LF_VCR}
-\title{Fit LF-VCR with POET latent factors}
+\title{Fit LF-VCR with PCA latent factors}
 \usage{
 LF_VCR(
   X,
   y,
-  number.K,
   covariate = NULL,
   nfold = 10,
-  matrix = "vad",
+  kmax = 8,
+  factor_criterion = "BIC3",
   categorical = FALSE
 )
 }
@@ -20,34 +20,40 @@ columns.}
 
 \item{y}{A numeric outcome vector with one value per row of \code{X}.}
 
-\item{number.K}{The number of latent factors to extract.}
-
 \item{covariate}{An optional matrix of adjustment covariates.}
 
 \item{nfold}{The number of cross-validation folds used by
 \code{\link[sparsegl:cv.sparsegl]{sparsegl::cv.sparsegl()}}.}
 
-\item{matrix}{The POET thresholding scale: \code{"cor"} for the correlation
-matrix or \code{"vad"} for the covariance matrix.}
+\item{kmax}{The maximum number of factors considered by
+\code{\link[GrFA:est_num]{GrFA::est_num()}}.}
+
+\item{factor_criterion}{The criterion passed to \code{\link[GrFA:est_num]{GrFA::est_num()}} when
+estimating \code{p_hat}. The default is \code{"BIC3"}.}
 
 \item{categorical}{Logical; use a binomial model when \code{TRUE} and a Gaussian
 model when \code{FALSE}.}
 }
 \value{
-A list containing the cross-validated sparse group lasso \code{model} and
-its \code{beta} coefficients at \code{lambda.min}.
+A list containing the estimated factor count \code{p_hat}, extracted PCA
+\code{factors}, fitted \code{pca} object, cross-validated sparse group lasso \code{model},
+and its \code{beta} coefficients at \code{lambda.min}.
 }
 \description{
-Extracts latent factors with Principal Orthogonal complEment Thresholding
-(POET), constructs factor-by-feature interactions, and fits the expanded
-design with cross-validated sparse group lasso.
+Estimates the number of factors with \code{\link[GrFA:est_num]{GrFA::est_num()}}, extracts that many
+principal components without scaling the predictors, constructs
+factor-by-feature interactions, and fits the expanded design with
+cross-validated sparse group lasso.
 }
 \examples{
 \dontrun{
 set.seed(1)
-X <- matrix(rnorm(1000), nrow = 100)
-y <- X[, 1] + rnorm(100)
-fit <- LF_VCR(X, y, number.K = 2, nfold = 5)
+F <- matrix(rnorm(200), nrow = 100)
+L <- matrix(rnorm(40), nrow = 20)
+X <- F \%*\% t(L) + matrix(rnorm(2000, sd = 0.3), nrow = 100)
+y <- F[, 1] + rnorm(100)
+fit <- LF_VCR(X, y, nfold = 5)
+fit$p_hat
 fit$beta
 }
 }

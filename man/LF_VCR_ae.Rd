@@ -5,25 +5,9 @@
 \alias{LF_VCR.ae}
 \title{Fit LF-VCR with autoencoder latent factors}
 \usage{
-LF_VCR_ae(
-  X,
-  y,
-  number.K,
-  covariate = NULL,
-  nfold = 10,
-  matrix = "vad",
-  categorical = FALSE
-)
+LF_VCR_ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
 
-LF_VCR.ae(
-  X,
-  y,
-  number.K,
-  covariate = NULL,
-  nfold = 10,
-  matrix = "vad",
-  categorical = FALSE
-)
+LF_VCR.ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
 }
 \arguments{
 \item{X}{A numeric matrix with observations in rows and predictors in
@@ -31,22 +15,20 @@ columns.}
 
 \item{y}{A numeric outcome vector with one value per row of \code{X}.}
 
-\item{number.K}{The number of latent factors to extract.}
+\item{number.K}{The number of autoencoder latent factors to extract.}
 
 \item{covariate}{An optional matrix of adjustment covariates.}
 
 \item{nfold}{The number of cross-validation folds used by
 \code{\link[sparsegl:cv.sparsegl]{sparsegl::cv.sparsegl()}}.}
 
-\item{matrix}{The POET thresholding scale: \code{"cor"} for the correlation
-matrix or \code{"vad"} for the covariance matrix.}
-
 \item{categorical}{Logical; use a binomial model when \code{TRUE} and a Gaussian
 model when \code{FALSE}.}
 }
 \value{
-A list containing the cross-validated sparse group lasso \code{model} and
-its \code{beta} coefficients at \code{lambda.min}.
+A list containing the fitted autoencoder \code{autoencoder}, extracted
+\code{factors}, cross-validated sparse group lasso \code{model}, and its \code{beta}
+coefficients at \code{lambda.min}.
 }
 \description{
 Extracts latent factors with an H2O autoencoder, constructs

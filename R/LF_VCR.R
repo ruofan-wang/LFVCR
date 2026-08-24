@@ -1,36 +1,42 @@
 
-#' Fit LF-VCR with POET latent factors
+#' Fit LF-VCR with PCA latent factors
 #'
-#' Extracts latent factors with Principal Orthogonal complEment Thresholding
-#' (POET), constructs factor-by-feature interactions, and fits the expanded
-#' design with cross-validated sparse group lasso.
+#' Estimates the number of factors with [GrFA::est_num()], extracts that many
+#' principal components without scaling the predictors, constructs
+#' factor-by-feature interactions, and fits the expanded design with
+#' cross-validated sparse group lasso.
 #'
 #' @param X A numeric matrix with observations in rows and predictors in
 #'   columns.
 #' @param y A numeric outcome vector with one value per row of `X`.
-#' @param number.K The number of latent factors to extract.
 #' @param covariate An optional matrix of adjustment covariates.
 #' @param nfold The number of cross-validation folds used by
 #'   [sparsegl::cv.sparsegl()].
-#' @param matrix The POET thresholding scale: `"cor"` for the correlation
-#'   matrix or `"vad"` for the covariance matrix.
+#' @param kmax The maximum number of factors considered by
+#'   [GrFA::est_num()].
+#' @param factor_criterion The criterion passed to [GrFA::est_num()] when
+#'   estimating `p_hat`. The default is `"BIC3"`.
 #' @param categorical Logical; use a binomial model when `TRUE` and a Gaussian
 #'   model when `FALSE`.
 #'
-#' @return A list containing the cross-validated sparse group lasso `model` and
-#'   its `beta` coefficients at `lambda.min`.
+#' @return A list containing the estimated factor count `p_hat`, extracted PCA
+#'   `factors`, fitted `pca` object, cross-validated sparse group lasso `model`,
+#'   and its `beta` coefficients at `lambda.min`.
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' set.seed(1)
-#' X <- matrix(rnorm(1000), nrow = 100)
-#' y <- X[, 1] + rnorm(100)
-#' fit <- LF_VCR(X, y, number.K = 2, nfold = 5)
+#' F <- matrix(rnorm(200), nrow = 100)
+#' L <- matrix(rnorm(40), nrow = 20)
+#' X <- F %*% t(L) + matrix(rnorm(2000, sd = 0.3), nrow = 100)
+#' y <- F[, 1] + rnorm(100)
+#' fit <- LF_VCR(X, y, nfold = 5)
+#' fit$p_hat
 #' fit$beta
 #' }
-LF_VCR <- function(X, y, number.K, covariate = NULL, nfold = 10,
-                   matrix = "vad", categorical = FALSE) {
+LF_VCR <- function(X, y, covariate = NULL, nfold = 10, kmax = 8,
+                   factor_criterion = "BIC3", categorical = FALSE) {
   X <- as.matrix(X)
   p <- ncol(X)
   n <- nrow(X)
@@ -41,23 +47,43 @@ LF_VCR <- function(X, y, number.K, covariate = NULL, nfold = 10,
     p1 <- ncol(covariate)
   }
 
-  Z.hat <- POET::POET(t(X), number.K, 0.5, "soft", matrix)$factors
-  Z.t <- t(Z.hat) 
-  result <- matrix(nrow = n, ncol = p * number.K)
-  for (i in 1:n) {
-    temp <- numeric()
-    for (j in 1:p) {
-      temp <- c(temp, X[i, j] * Z.t[i, ])
-    }
-    result[i, ] <- temp
+  if (kmax < 1 || kmax >= min(n, p)) {
+    stop("`kmax` must be at least 1 and smaller than both nrow(X) and ncol(X).")
   }
-  XZ <- result
+
+  X.centered <- scale(X, center = TRUE, scale = FALSE)
+  p_hat <- GrFA::est_num(
+    X.centered, kmax = kmax, type = factor_criterion
+  )
+
+  if (p_hat > 0) {
+    pca_fit <- stats::prcomp(
+      X, center = TRUE, scale. = FALSE, rank. = p_hat
+    )
+    factors <- pca_fit$x[, seq_len(p_hat), drop = FALSE]
+    XZ <- matrix(nrow = n, ncol = p * p_hat)
+    for (i in seq_len(n)) {
+      temp <- numeric()
+      for (j in seq_len(p)) {
+        temp <- c(temp, X[i, j] * factors[i, ])
+      }
+      XZ[i, ] <- temp
+    }
+  } else {
+    pca_fit <- NULL
+    factors <- matrix(numeric(), nrow = n, ncol = 0)
+    XZ <- matrix(numeric(), nrow = n, ncol = 0)
+  }
+
   if (is.null(covariate)) {
     cbind.X.total <- cbind(XZ, X)
-    groups <- c(rep(1:p, each = number.K), (p + 1):(p + p))
+    groups <- c(rep(seq_len(p), each = p_hat), p + seq_len(p))
   } else {
     cbind.X.total <- cbind(XZ, X, covariate)
-    groups <- c(rep(1:p, each = number.K), (p + 1):(p + p + p1))
+    groups <- c(
+      rep(seq_len(p), each = p_hat),
+      p + seq_len(p + p1)
+    )
   }
   
   if (!categorical) {
@@ -78,6 +104,9 @@ LF_VCR <- function(X, y, number.K, covariate = NULL, nfold = 10,
   beta <- stats::coef(cv_fit, s = "lambda.min")
 
   return(list(
+    p_hat = p_hat,
+    factors = factors,
+    pca = pca_fit,
     model = cv_fit,
     beta = beta
   ))

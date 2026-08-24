@@ -6,9 +6,11 @@
 #' cross-validated sparse group lasso.
 #'
 #' @inheritParams LF_VCR
+#' @param number.K The number of autoencoder latent factors to extract.
 #'
-#' @return A list containing the cross-validated sparse group lasso `model` and
-#'   its `beta` coefficients at `lambda.min`.
+#' @return A list containing the fitted autoencoder `autoencoder`, extracted
+#'   `factors`, cross-validated sparse group lasso `model`, and its `beta`
+#'   coefficients at `lambda.min`.
 #' @export
 #'
 #' @examples
@@ -20,7 +22,7 @@
 #' fit$beta
 #' }
 LF_VCR_ae <- function(X, y, number.K, covariate = NULL, nfold = 10,
-                      matrix = "vad", categorical = FALSE) {
+                      categorical = FALSE) {
   X <- as.matrix(X)
   p <- ncol(X)
   n <- nrow(X)
@@ -81,6 +83,8 @@ LF_VCR_ae <- function(X, y, number.K, covariate = NULL, nfold = 10,
   beta <- stats::coef(cv_fit, s = "lambda.min")
 
   return(list(
+    autoencoder = ae_model,
+    factors = Z.t,
     model = cv_fit,
     beta = beta
   ))

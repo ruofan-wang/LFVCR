@@ -17,7 +17,7 @@ LF_VCR_ae(
   nfold = 10,
   p_hat = NULL,
   kmax = 15,
-  factor_criterion = "BIC3",
+  factor_criterion = "IC2",
   categorical = FALSE
 )
 
@@ -28,7 +28,7 @@ LF_VCR.ae(
   nfold = 10,
   p_hat = NULL,
   kmax = 15,
-  factor_criterion = "BIC3",
+  factor_criterion = "IC2",
   categorical = FALSE
 )
 ```
@@ -70,7 +70,7 @@ LF_VCR.ae(
 
   The criterion passed to
   [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html) when
-  estimating `p_hat`. The default is `"BIC3"`.
+  estimating `p_hat`. The default is `"IC2"`.
 
 - categorical:
 

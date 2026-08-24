@@ -54,7 +54,7 @@
 <li>Center <code>X</code> without scaling its columns.</li>
 <li>Select the number of latent factors, <code>p_hat</code>:
 <ul>
-<li>By default, estimate it with <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code> using <code>kmax = 15</code> and the <code>"BIC3"</code> criterion.</li>
+<li>By default, estimate it with <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code> using <code>kmax = 15</code> and the <code>"IC2"</code> criterion.</li>
 <li>Alternatively, supply <code>p_hat</code> manually and skip automatic estimation.</li>
 </ul>
 </li>
@@ -137,7 +137,7 @@
 <span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  kmax <span class="op">=</span> <span class="fl">15</span>,</span>
-<span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span></span>
+<span>  factor_criterion <span class="op">=</span> <span class="st">"IC2"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit_pca</span><span class="op">$</span><span class="va">p_hat</span></span>
@@ -150,7 +150,7 @@
 <span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  kmax <span class="op">=</span> <span class="fl">15</span>,</span>
-<span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span></span>
+<span>  factor_criterion <span class="op">=</span> <span class="st">"IC2"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit_ae</span><span class="op">$</span><span class="va">p_hat</span></span>
@@ -203,7 +203,7 @@
 <span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  kmax <span class="op">=</span> <span class="fl">15</span>,</span>
-<span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span>,</span>
+<span>  factor_criterion <span class="op">=</span> <span class="st">"IC2"</span>,</span>
 <span>  categorical <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -217,7 +217,7 @@
 <span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  kmax <span class="op">=</span> <span class="fl">15</span>,</span>
-<span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span>,</span>
+<span>  factor_criterion <span class="op">=</span> <span class="st">"IC2"</span>,</span>
 <span>  categorical <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Binary cross-validation folds are stratified by outcome level.</p>
@@ -261,7 +261,7 @@
 </tr>
 <tr>
 <td><code>factor_criterion</code></td>
-<td>Factor-number criterion: <code>PC1</code>, <code>PC2</code>, <code>PC3</code>, <code>IC1</code>, <code>IC2</code>, <code>IC3</code>, <code>AIC3</code>, <code>BIC3</code>, <code>ER</code>, or <code>GR</code>.</td>
+<td>Factor-number criterion; default is <code>IC2</code>. Available values are <code>PC1</code>, <code>PC2</code>, <code>PC3</code>, <code>IC1</code>, <code>IC2</code>, <code>IC3</code>, <code>AIC3</code>, <code>BIC3</code>, <code>ER</code>, and <code>GR</code>.</td>
 </tr>
 <tr>
 <td><code>categorical</code></td>

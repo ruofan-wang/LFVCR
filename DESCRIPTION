@@ -9,9 +9,9 @@ Authors@R: person(
     email = "ppeanutsss@gmail.com")
 Description: Extracts latent factors from high-dimensional predictors and
     combines factor-by-feature interactions with the original predictors in a
-    sparse group lasso model. The number of principal-component factors is
-    estimated with Group Factor Analysis (GrFA); autoencoder-based factor
-    extraction is also available.
+    sparse group lasso model. The factor count can be estimated with Group
+    Factor Analysis (GrFA) or supplied manually; factor extraction is available
+    through principal components or an autoencoder.
 License: GPL-3
 Encoding: UTF-8
 Imports:

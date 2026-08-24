@@ -1,17 +1,19 @@
 
 #' Fit LF-VCR with autoencoder latent factors
 #'
-#' Estimates the number of factors with [GrFA::est_num()], uses the resulting
-#' `p_hat` as the hidden-layer width of an H2O autoencoder, constructs the same
-#' factor-by-feature interactions as [LF_VCR()], and fits the same
-#' cross-validated sparse group lasso model.
+#' Uses a manually supplied factor count or estimates it with
+#' [GrFA::est_num()], uses the resulting `p_hat` as the hidden-layer width of
+#' an H2O autoencoder, constructs the same factor-by-feature interactions as
+#' [LF_VCR()], and fits the same cross-validated sparse group lasso model.
 #'
 #' @inheritParams LF_VCR
 #'
-#' @return A list containing the estimated factor count `p_hat`, fitted
+#' @return A list containing the selected factor count `p_hat`, fitted
 #'   `autoencoder`, extracted `factors`, cross-validated sparse group lasso
 #'   `model`, its `beta` coefficients at `lambda.min`, and binary
-#'   `outcome_levels` when applicable.
+#'   `outcome_levels` when applicable. `p_hat_source` reports whether the
+#'   factor count was `"estimated"` or `"manual"`; `kmax_used` reports the
+#'   estimation limit.
 #' @export
 #'
 #' @examples
@@ -25,10 +27,11 @@
 #' fit$p_hat
 #' fit$beta
 #' }
-LF_VCR_ae <- function(X, y, covariate = NULL, nfold = 10, kmax = 8,
+LF_VCR_ae <- function(X, y, covariate = NULL, nfold = 10, p_hat = NULL,
+                      kmax = 15,
                       factor_criterion = "BIC3", categorical = FALSE) {
   inputs <- .lfvcr_prepare_inputs(
-    X, y, covariate, nfold, kmax, factor_criterion, categorical
+    X, y, covariate, nfold, p_hat, kmax, factor_criterion, categorical
   )
 
   if (inputs$p_hat > 0L) {
@@ -58,6 +61,8 @@ LF_VCR_ae <- function(X, y, covariate = NULL, nfold = 10, kmax = 8,
 
   return(list(
     p_hat = inputs$p_hat,
+    p_hat_source = inputs$p_hat_source,
+    kmax_used = inputs$kmax_used,
     autoencoder = ae_model,
     factors = factors,
     model = regression$model,

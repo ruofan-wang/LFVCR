@@ -1,4 +1,4 @@
-.lfvcr_prepare_inputs <- function(X, y, covariate, nfold, kmax,
+.lfvcr_prepare_inputs <- function(X, y, covariate, nfold, p_hat, kmax,
                                   factor_criterion, categorical) {
   X <- as.matrix(X)
   if (!is.numeric(X) || length(dim(X)) != 2L) {
@@ -26,24 +26,6 @@
     stop("`nfold` must be an integer between 2 and nrow(X).")
   }
   nfold <- as.integer(nfold)
-
-  if (length(kmax) != 1L || is.na(kmax) || kmax != as.integer(kmax) ||
-      kmax < 1L || kmax >= min(n, p)) {
-    stop("`kmax` must be an integer of at least 1 and smaller than both dimensions of `X`.")
-  }
-  kmax <- as.integer(kmax)
-
-  valid_criteria <- c(
-    "PC1", "PC2", "PC3", "IC1", "IC2", "IC3",
-    "AIC3", "BIC3", "ER", "GR"
-  )
-  if (length(factor_criterion) != 1L ||
-      !factor_criterion %in% valid_criteria) {
-    stop(
-      "`factor_criterion` must be one of: ",
-      paste(valid_criteria, collapse = ", "), "."
-    )
-  }
 
   if (is.null(covariate)) {
     covariate_matrix <- NULL
@@ -81,12 +63,48 @@
     outcome_levels <- NULL
   }
 
-  X_centered <- scale(X, center = TRUE, scale = FALSE)
-  p_hat <- as.integer(GrFA::est_num(
-    X_centered, kmax = kmax, type = factor_criterion
-  ))
-  if (length(p_hat) != 1L || is.na(p_hat) || p_hat < 0L || p_hat > kmax) {
-    stop("`GrFA::est_num()` returned an invalid factor count.")
+  if (is.null(p_hat)) {
+    if (length(kmax) != 1L || !is.numeric(kmax) || is.na(kmax) ||
+        !is.finite(kmax) || kmax != as.integer(kmax) || kmax < 1L) {
+      stop("`kmax` must be a positive integer.")
+    }
+    kmax <- as.integer(kmax)
+    kmax_used <- min(kmax, min(n, p) - 1L)
+
+    valid_criteria <- c(
+      "PC1", "PC2", "PC3", "IC1", "IC2", "IC3",
+      "AIC3", "BIC3", "ER", "GR"
+    )
+    if (length(factor_criterion) != 1L ||
+        !factor_criterion %in% valid_criteria) {
+      stop(
+        "`factor_criterion` must be one of: ",
+        paste(valid_criteria, collapse = ", "), "."
+      )
+    }
+
+    X_centered <- scale(X, center = TRUE, scale = FALSE)
+    p_hat <- as.integer(GrFA::est_num(
+      X_centered, kmax = kmax_used, type = factor_criterion
+    ))
+    if (length(p_hat) != 1L || is.na(p_hat) || p_hat < 0L ||
+        p_hat > kmax_used) {
+      stop("`GrFA::est_num()` returned an invalid factor count.")
+    }
+    p_hat_source <- "estimated"
+  } else {
+    max_manual_p_hat <- min(n - 1L, p)
+    if (length(p_hat) != 1L || !is.numeric(p_hat) || is.na(p_hat) ||
+        !is.finite(p_hat) || p_hat != as.integer(p_hat) || p_hat < 0L ||
+        p_hat > max_manual_p_hat) {
+      stop(
+        "Manual `p_hat` must be a nonnegative integer no larger than ",
+        max_manual_p_hat, " for these data."
+      )
+    }
+    p_hat <- as.integer(p_hat)
+    p_hat_source <- "manual"
+    kmax_used <- NA_integer_
   }
 
   list(
@@ -96,7 +114,9 @@
     nfold = nfold,
     categorical = categorical,
     outcome_levels = outcome_levels,
-    p_hat = p_hat
+    p_hat = p_hat,
+    p_hat_source = p_hat_source,
+    kmax_used = kmax_used
   )
 }
 

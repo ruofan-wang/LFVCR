@@ -9,7 +9,8 @@ LF_VCR(
   y,
   covariate = NULL,
   nfold = 10,
-  kmax = 8,
+  p_hat = NULL,
+  kmax = 15,
   factor_criterion = "BIC3",
   categorical = FALSE
 )
@@ -25,8 +26,13 @@ columns.}
 \item{nfold}{The number of cross-validation folds used by
 \code{\link[sparsegl:cv.sparsegl]{sparsegl::cv.sparsegl()}}.}
 
+\item{p_hat}{Optional nonnegative integer specifying the number of factors.
+The default, \code{NULL}, estimates the number with \code{\link[GrFA:est_num]{GrFA::est_num()}}. When a
+value is supplied, automatic factor-number estimation is skipped.}
+
 \item{kmax}{The maximum number of factors considered by
-\code{\link[GrFA:est_num]{GrFA::est_num()}}.}
+\code{\link[GrFA:est_num]{GrFA::est_num()}} when \code{p_hat = NULL}. The default is 15. If the data have
+fewer dimensions, the largest allowable value is used.}
 
 \item{factor_criterion}{The criterion passed to \code{\link[GrFA:est_num]{GrFA::est_num()}} when
 estimating \code{p_hat}. The default is \code{"BIC3"}.}
@@ -36,16 +42,17 @@ model when \code{FALSE}. For a binary outcome, the second factor level is
 modeled as 1 and both levels are returned in \code{outcome_levels}.}
 }
 \value{
-A list containing the estimated factor count \code{p_hat}, extracted PCA
+A list containing the selected factor count \code{p_hat}, extracted PCA
 \code{factors}, fitted \code{pca} object, cross-validated sparse group lasso \code{model},
 its \code{beta} coefficients at \code{lambda.min}, and binary \code{outcome_levels} when
-applicable.
+applicable. \code{p_hat_source} reports whether the factor count was
+\code{"estimated"} or \code{"manual"}; \code{kmax_used} reports the estimation limit.
 }
 \description{
-Estimates the number of factors with \code{\link[GrFA:est_num]{GrFA::est_num()}}, extracts that many
-principal components without scaling the predictors, constructs
-factor-by-feature interactions, and fits the expanded design with
-cross-validated sparse group lasso.
+Uses a manually supplied factor count or estimates it with
+\code{\link[GrFA:est_num]{GrFA::est_num()}}, extracts that many principal components without scaling
+the predictors, constructs factor-by-feature interactions, and fits the
+expanded design with cross-validated sparse group lasso.
 }
 \examples{
 \dontrun{

@@ -1,6 +1,6 @@
 # Fit LF-VCR with autoencoder latent factors
 
-Estimates the number of factors with
+Uses a manually supplied factor count or estimates it with
 [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html), uses the
 resulting `p_hat` as the hidden-layer width of an H2O autoencoder,
 constructs the same factor-by-feature interactions as
@@ -15,7 +15,8 @@ LF_VCR_ae(
   y,
   covariate = NULL,
   nfold = 10,
-  kmax = 8,
+  p_hat = NULL,
+  kmax = 15,
   factor_criterion = "BIC3",
   categorical = FALSE
 )
@@ -25,7 +26,8 @@ LF_VCR.ae(
   y,
   covariate = NULL,
   nfold = 10,
-  kmax = 8,
+  p_hat = NULL,
+  kmax = 15,
   factor_criterion = "BIC3",
   categorical = FALSE
 )
@@ -50,10 +52,19 @@ LF_VCR.ae(
   The number of cross-validation folds used by
   [`sparsegl::cv.sparsegl()`](https://dajmcdon.github.io/sparsegl/reference/cv.sparsegl.html).
 
+- p_hat:
+
+  Optional nonnegative integer specifying the number of factors. The
+  default, `NULL`, estimates the number with
+  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html). When a
+  value is supplied, automatic factor-number estimation is skipped.
+
 - kmax:
 
   The maximum number of factors considered by
-  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html).
+  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html) when
+  `p_hat = NULL`. The default is 15. If the data have fewer dimensions,
+  the largest allowable value is used.
 
 - factor_criterion:
 
@@ -69,10 +80,12 @@ LF_VCR.ae(
 
 ## Value
 
-A list containing the estimated factor count `p_hat`, fitted
+A list containing the selected factor count `p_hat`, fitted
 `autoencoder`, extracted `factors`, cross-validated sparse group lasso
 `model`, its `beta` coefficients at `lambda.min`, and binary
-`outcome_levels` when applicable.
+`outcome_levels` when applicable. `p_hat_source` reports whether the
+factor count was `"estimated"` or `"manual"`; `kmax_used` reports the
+estimation limit.
 
 ## Examples
 

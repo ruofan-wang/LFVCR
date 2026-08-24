@@ -11,9 +11,12 @@ cross-validated sparse group lasso.
 Both LFVCR implementations follow the same workflow:
 
 1.  Center `X` without scaling its columns.
-2.  Estimate the number of latent factors, `p_hat`, with
-    [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html). The
-    default criterion is `"BIC3"`.
+2.  Select the number of latent factors, `p_hat`:
+    - By default, estimate it with
+      [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html)
+      using `kmax = 15` and the `"BIC3"` criterion.
+    - Alternatively, supply `p_hat` manually and skip automatic
+      estimation.
 3.  Extract exactly `p_hat` factors:
     - [`LF_VCR()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR.md)
       uses PCA with `scale. = FALSE`.
@@ -24,8 +27,9 @@ Both LFVCR implementations follow the same workflow:
     covariates.
 6.  Fit Gaussian or binomial sparse group lasso with cross-validation.
 
-`p_hat` is estimated automatically in both functions. There is no
-`number.K` argument.
+Both functions use `p_hat = NULL` by default, which turns on automatic
+estimation. There is no `number.K` argument. A manually supplied `p_hat`
+is used directly by PCA or as the autoencoder hidden-layer width.
 
 | Function | Factor extraction | Supported outcomes |
 |----|----|----|
@@ -87,7 +91,7 @@ fit_pca <- LF_VCR(
   y = y_continuous,
   covariate = covariate,
   nfold = 5,
-  kmax = 8,
+  kmax = 15,
   factor_criterion = "BIC3"
 )
 
@@ -107,13 +111,44 @@ fit_ae <- LF_VCR_ae(
   y = y_continuous,
   covariate = covariate,
   nfold = 5,
-  kmax = 8,
+  kmax = 15,
   factor_criterion = "BIC3"
 )
 
 fit_ae$p_hat
 fit_ae$beta
 ```
+
+## Manual Factor Count
+
+To skip [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html),
+supply `p_hat` directly. The same option is available in both functions.
+
+``` r
+
+fit_pca_manual <- LF_VCR(
+  X = X,
+  y = y_continuous,
+  covariate = covariate,
+  nfold = 5,
+  p_hat = 2
+)
+
+fit_ae_manual <- LF_VCR_ae(
+  X = X,
+  y = y_continuous,
+  covariate = covariate,
+  nfold = 5,
+  p_hat = 2
+)
+
+fit_pca_manual$p_hat_source  # "manual"
+fit_ae_manual$p_hat_source   # "manual"
+```
+
+When `p_hat` is supplied, `kmax` and `factor_criterion` are not used.
+Manual `p_hat` may be zero, in which case factor extraction and
+interaction terms are skipped.
 
 ## Binary Outcome
 
@@ -140,7 +175,7 @@ fit_binary <- LF_VCR(
   y = y_binary,
   covariate = covariate,
   nfold = 5,
-  kmax = 8,
+  kmax = 15,
   factor_criterion = "BIC3",
   categorical = TRUE
 )
@@ -159,7 +194,7 @@ fit_binary_ae <- LF_VCR_ae(
   y = y_binary,
   covariate = covariate,
   nfold = 5,
-  kmax = 8,
+  kmax = 15,
   factor_criterion = "BIC3",
   categorical = TRUE
 )
@@ -175,7 +210,8 @@ Binary cross-validation folds are stratified by outcome level.
 | `y` | Numeric response for a continuous model, or a two-level response for a binary model. |
 | `covariate` | Optional numeric adjustment matrix with `n` rows. |
 | `nfold` | Number of cross-validation folds; must be between 2 and `n`. |
-| `kmax` | Maximum factor count considered by [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html); default is 8. |
+| `p_hat` | Optional manual factor count. The default is `NULL`, which uses automatic estimation. |
+| `kmax` | Maximum factor count considered by [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html); default is 15. It is reduced only when the data dimensions make 15 impossible. |
 | `factor_criterion` | Factor-number criterion: `PC1`, `PC2`, `PC3`, `IC1`, `IC2`, `IC3`, `AIC3`, `BIC3`, `ER`, or `GR`. |
 | `categorical` | Use `FALSE` for a Gaussian model and `TRUE` for a binomial model. |
 
@@ -185,7 +221,9 @@ Both functions return:
 
 | Value | Description |
 |----|----|
-| `p_hat` | Factor count estimated by [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html). |
+| `p_hat` | Factor count estimated by [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html) or supplied manually. |
+| `p_hat_source` | `"estimated"` or `"manual"`. |
+| `kmax_used` | Effective `kmax` used for estimation; `NA` when `p_hat` is manual. |
 | `factors` | Extracted `n` by `p_hat` factor matrix. |
 | `model` | Cross-validated `sparsegl` model. |
 | `beta` | Coefficients evaluated at `lambda.min`. |

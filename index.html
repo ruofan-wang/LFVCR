@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Latent Factor Varying-Coefficient Regression">
-<meta name="description" content="Extracts latent factors from high-dimensional predictors and combines factor-by-feature interactions with the original predictors in a sparse group lasso model. The number of principal-component factors is estimated with Group Factor Analysis (GrFA); autoencoder-based factor extraction is also available.">
-<meta property="og:description" content="Extracts latent factors from high-dimensional predictors and combines factor-by-feature interactions with the original predictors in a sparse group lasso model. The number of principal-component factors is estimated with Group Factor Analysis (GrFA); autoencoder-based factor extraction is also available.">
+<meta name="description" content="Extracts latent factors from high-dimensional predictors and combines factor-by-feature interactions with the original predictors in a sparse group lasso model. The factor count can be estimated with Group Factor Analysis (GrFA) or supplied manually; factor extraction is available through principal components or an autoencoder.">
+<meta property="og:description" content="Extracts latent factors from high-dimensional predictors and combines factor-by-feature interactions with the original predictors in a sparse group lasso model. The factor count can be estimated with Group Factor Analysis (GrFA) or supplied manually; factor extraction is available through principal components or an autoencoder.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -52,7 +52,12 @@
 <p>Both LFVCR implementations follow the same workflow:</p>
 <ol style="list-style-type: decimal">
 <li>Center <code>X</code> without scaling its columns.</li>
-<li>Estimate the number of latent factors, <code>p_hat</code>, with <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>. The default criterion is <code>"BIC3"</code>.</li>
+<li>Select the number of latent factors, <code>p_hat</code>:
+<ul>
+<li>By default, estimate it with <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code> using <code>kmax = 15</code> and the <code>"BIC3"</code> criterion.</li>
+<li>Alternatively, supply <code>p_hat</code> manually and skip automatic estimation.</li>
+</ul>
+</li>
 <li>Extract exactly <code>p_hat</code> factors:
 <ul>
 <li>
@@ -65,7 +70,7 @@
 <li>Combine the interactions, original predictors, and optional covariates.</li>
 <li>Fit Gaussian or binomial sparse group lasso with cross-validation.</li>
 </ol>
-<p><code>p_hat</code> is estimated automatically in both functions. There is no <code>number.K</code> argument.</p>
+<p>Both functions use <code>p_hat = NULL</code> by default, which turns on automatic estimation. There is no <code>number.K</code> argument. A manually supplied <code>p_hat</code> is used directly by PCA or as the autoencoder hidden-layer width.</p>
 <table class="table">
 <thead><tr>
 <th>Function</th>
@@ -131,7 +136,7 @@
 <span>  y <span class="op">=</span> <span class="va">y_continuous</span>,</span>
 <span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  kmax <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  kmax <span class="op">=</span> <span class="fl">15</span>,</span>
 <span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -144,7 +149,7 @@
 <span>  y <span class="op">=</span> <span class="va">y_continuous</span>,</span>
 <span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  kmax <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  kmax <span class="op">=</span> <span class="fl">15</span>,</span>
 <span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -152,10 +157,35 @@
 <span><span class="va">fit_ae</span><span class="op">$</span><span class="va">beta</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="manual-factor-count">Manual Factor Count<a class="anchor" aria-label="anchor" href="#manual-factor-count"></a>
+</h2>
+<p>To skip <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>, supply <code>p_hat</code> directly. The same option is available in both functions.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_pca_manual</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/LF_VCR.html">LF_VCR</a></span><span class="op">(</span></span>
+<span>  X <span class="op">=</span> <span class="va">X</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y_continuous</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
+<span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  p_hat <span class="op">=</span> <span class="fl">2</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_ae_manual</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/LF_VCR_ae.html">LF_VCR_ae</a></span><span class="op">(</span></span>
+<span>  X <span class="op">=</span> <span class="va">X</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y_continuous</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
+<span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  p_hat <span class="op">=</span> <span class="fl">2</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_pca_manual</span><span class="op">$</span><span class="va">p_hat_source</span>  <span class="co"># "manual"</span></span>
+<span><span class="va">fit_ae_manual</span><span class="op">$</span><span class="va">p_hat_source</span>   <span class="co"># "manual"</span></span></code></pre></div>
+<p>When <code>p_hat</code> is supplied, <code>kmax</code> and <code>factor_criterion</code> are not used. Manual <code>p_hat</code> may be zero, in which case factor extraction and interaction terms are skipped.</p>
+</div>
+<div class="section level2">
 <h2 id="binary-outcome">Binary Outcome<a class="anchor" aria-label="anchor" href="#binary-outcome"></a>
 </h2>
 <p>Set <code>categorical = TRUE</code> and supply an outcome with exactly two observed levels. LFVCR maps the first factor level to 0 and the second factor level to 1. Set the factor levels explicitly when the positive class matters.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">probability</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span></span>
 <span>  <span class="va">true_factors</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">-</span></span>
 <span>  <span class="fl">0.8</span> <span class="op">*</span> <span class="va">true_factors</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span></span>
@@ -172,7 +202,7 @@
 <span>  y <span class="op">=</span> <span class="va">y_binary</span>,</span>
 <span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  kmax <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  kmax <span class="op">=</span> <span class="fl">15</span>,</span>
 <span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span>,</span>
 <span>  categorical <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
@@ -180,13 +210,13 @@
 <span><span class="va">fit_binary</span><span class="op">$</span><span class="va">outcome_levels</span>  <span class="co"># "control" is 0; "case" is 1</span></span>
 <span><span class="va">fit_binary</span><span class="op">$</span><span class="va">beta</span></span></code></pre></div>
 <p>The same binary-outcome call works with <code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code>:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_binary_ae</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/LF_VCR_ae.html">LF_VCR_ae</a></span><span class="op">(</span></span>
 <span>  X <span class="op">=</span> <span class="va">X</span>,</span>
 <span>  y <span class="op">=</span> <span class="va">y_binary</span>,</span>
 <span>  covariate <span class="op">=</span> <span class="va">covariate</span>,</span>
 <span>  nfold <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  kmax <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  kmax <span class="op">=</span> <span class="fl">15</span>,</span>
 <span>  factor_criterion <span class="op">=</span> <span class="st">"BIC3"</span>,</span>
 <span>  categorical <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -222,8 +252,12 @@
 <td>Number of cross-validation folds; must be between 2 and <code>n</code>.</td>
 </tr>
 <tr>
+<td><code>p_hat</code></td>
+<td>Optional manual factor count. The default is <code>NULL</code>, which uses automatic estimation.</td>
+</tr>
+<tr>
 <td><code>kmax</code></td>
-<td>Maximum factor count considered by <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>; default is 8.</td>
+<td>Maximum factor count considered by <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>; default is 15. It is reduced only when the data dimensions make 15 impossible.</td>
 </tr>
 <tr>
 <td><code>factor_criterion</code></td>
@@ -252,7 +286,16 @@
 <tbody>
 <tr>
 <td><code>p_hat</code></td>
-<td>Factor count estimated by <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>.</td>
+<td>Factor count estimated by <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code> or supplied manually.</td>
+</tr>
+<tr>
+<td><code>p_hat_source</code></td>
+<td>
+<code>"estimated"</code> or <code>"manual"</code>.</td>
+</tr>
+<tr>
+<td><code>kmax_used</code></td>
+<td>Effective <code>kmax</code> used for estimation; <code>NA</code> when <code>p_hat</code> is manual.</td>
 </tr>
 <tr>
 <td><code>factors</code></td>

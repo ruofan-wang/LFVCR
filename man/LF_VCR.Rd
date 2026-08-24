@@ -32,12 +32,14 @@ columns.}
 estimating \code{p_hat}. The default is \code{"BIC3"}.}
 
 \item{categorical}{Logical; use a binomial model when \code{TRUE} and a Gaussian
-model when \code{FALSE}.}
+model when \code{FALSE}. For a binary outcome, the second factor level is
+modeled as 1 and both levels are returned in \code{outcome_levels}.}
 }
 \value{
 A list containing the estimated factor count \code{p_hat}, extracted PCA
 \code{factors}, fitted \code{pca} object, cross-validated sparse group lasso \code{model},
-and its \code{beta} coefficients at \code{lambda.min}.
+its \code{beta} coefficients at \code{lambda.min}, and binary \code{outcome_levels} when
+applicable.
 }
 \description{
 Estimates the number of factors with \code{\link[GrFA:est_num]{GrFA::est_num()}}, extracts that many

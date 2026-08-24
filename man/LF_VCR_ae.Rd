@@ -5,9 +5,25 @@
 \alias{LF_VCR.ae}
 \title{Fit LF-VCR with autoencoder latent factors}
 \usage{
-LF_VCR_ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
+LF_VCR_ae(
+  X,
+  y,
+  covariate = NULL,
+  nfold = 10,
+  kmax = 8,
+  factor_criterion = "BIC3",
+  categorical = FALSE
+)
 
-LF_VCR.ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
+LF_VCR.ae(
+  X,
+  y,
+  covariate = NULL,
+  nfold = 10,
+  kmax = 8,
+  factor_criterion = "BIC3",
+  categorical = FALSE
+)
 }
 \arguments{
 \item{X}{A numeric matrix with observations in rows and predictors in
@@ -15,32 +31,42 @@ columns.}
 
 \item{y}{A numeric outcome vector with one value per row of \code{X}.}
 
-\item{number.K}{The number of autoencoder latent factors to extract.}
-
 \item{covariate}{An optional matrix of adjustment covariates.}
 
 \item{nfold}{The number of cross-validation folds used by
 \code{\link[sparsegl:cv.sparsegl]{sparsegl::cv.sparsegl()}}.}
 
+\item{kmax}{The maximum number of factors considered by
+\code{\link[GrFA:est_num]{GrFA::est_num()}}.}
+
+\item{factor_criterion}{The criterion passed to \code{\link[GrFA:est_num]{GrFA::est_num()}} when
+estimating \code{p_hat}. The default is \code{"BIC3"}.}
+
 \item{categorical}{Logical; use a binomial model when \code{TRUE} and a Gaussian
-model when \code{FALSE}.}
+model when \code{FALSE}. For a binary outcome, the second factor level is
+modeled as 1 and both levels are returned in \code{outcome_levels}.}
 }
 \value{
-A list containing the fitted autoencoder \code{autoencoder}, extracted
-\code{factors}, cross-validated sparse group lasso \code{model}, and its \code{beta}
-coefficients at \code{lambda.min}.
+A list containing the estimated factor count \code{p_hat}, fitted
+\code{autoencoder}, extracted \code{factors}, cross-validated sparse group lasso
+\code{model}, its \code{beta} coefficients at \code{lambda.min}, and binary
+\code{outcome_levels} when applicable.
 }
 \description{
-Extracts latent factors with an H2O autoencoder, constructs
-factor-by-feature interactions, and fits the expanded design with
-cross-validated sparse group lasso.
+Estimates the number of factors with \code{\link[GrFA:est_num]{GrFA::est_num()}}, uses the resulting
+\code{p_hat} as the hidden-layer width of an H2O autoencoder, constructs the same
+factor-by-feature interactions as \code{\link[=LF_VCR]{LF_VCR()}}, and fits the same
+cross-validated sparse group lasso model.
 }
 \examples{
 \dontrun{
 set.seed(1)
-X <- matrix(rnorm(1000), nrow = 100)
-y <- X[, 1] + rnorm(100)
-fit <- LF_VCR_ae(X, y, number.K = 2, nfold = 5)
+F <- matrix(rnorm(200), nrow = 100)
+L <- matrix(rnorm(40), nrow = 20)
+X <- F \%*\% t(L) + matrix(rnorm(2000, sd = 0.3), nrow = 100)
+y <- F[, 1] + rnorm(100)
+fit <- LF_VCR_ae(X, y, nfold = 5)
+fit$p_hat
 fit$beta
 }
 }

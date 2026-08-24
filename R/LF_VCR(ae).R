@@ -1,92 +1,68 @@
 
 #' Fit LF-VCR with autoencoder latent factors
 #'
-#' Extracts latent factors with an H2O autoencoder, constructs
-#' factor-by-feature interactions, and fits the expanded design with
-#' cross-validated sparse group lasso.
+#' Estimates the number of factors with [GrFA::est_num()], uses the resulting
+#' `p_hat` as the hidden-layer width of an H2O autoencoder, constructs the same
+#' factor-by-feature interactions as [LF_VCR()], and fits the same
+#' cross-validated sparse group lasso model.
 #'
 #' @inheritParams LF_VCR
-#' @param number.K The number of autoencoder latent factors to extract.
 #'
-#' @return A list containing the fitted autoencoder `autoencoder`, extracted
-#'   `factors`, cross-validated sparse group lasso `model`, and its `beta`
-#'   coefficients at `lambda.min`.
+#' @return A list containing the estimated factor count `p_hat`, fitted
+#'   `autoencoder`, extracted `factors`, cross-validated sparse group lasso
+#'   `model`, its `beta` coefficients at `lambda.min`, and binary
+#'   `outcome_levels` when applicable.
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' set.seed(1)
-#' X <- matrix(rnorm(1000), nrow = 100)
-#' y <- X[, 1] + rnorm(100)
-#' fit <- LF_VCR_ae(X, y, number.K = 2, nfold = 5)
+#' F <- matrix(rnorm(200), nrow = 100)
+#' L <- matrix(rnorm(40), nrow = 20)
+#' X <- F %*% t(L) + matrix(rnorm(2000, sd = 0.3), nrow = 100)
+#' y <- F[, 1] + rnorm(100)
+#' fit <- LF_VCR_ae(X, y, nfold = 5)
+#' fit$p_hat
 #' fit$beta
 #' }
-LF_VCR_ae <- function(X, y, number.K, covariate = NULL, nfold = 10,
-                      categorical = FALSE) {
-  X <- as.matrix(X)
-  p <- ncol(X)
-  n <- nrow(X)
-  if (is.null(covariate)) {
-    p1 <- 0
-  } else {
-    covariate <- as.matrix(covariate)
-    p1 <- ncol(covariate)
-  }
-  h2o::h2o.init()
-  training_frame <- h2o::as.h2o(X)
-  ae_model <- h2o::h2o.deeplearning(
-    x = 1:p,
-    training_frame = training_frame,
-    ignore_const_cols = FALSE,
-    activation = "Tanh",
-    hidden = c(number.K),
-    reproducible = TRUE,
-    seed = 1,
-    autoencoder = TRUE
+LF_VCR_ae <- function(X, y, covariate = NULL, nfold = 10, kmax = 8,
+                      factor_criterion = "BIC3", categorical = FALSE) {
+  inputs <- .lfvcr_prepare_inputs(
+    X, y, covariate, nfold, kmax, factor_criterion, categorical
   )
-  Z.hat <- t(as.matrix(h2o::h2o.deepfeatures(
-    ae_model, training_frame, layer = 1
-  )))
-  Z.t <- t(Z.hat) 
-  result <- matrix(nrow = n, ncol = p * number.K)
-  for (i in 1:n) {
-    temp <- numeric()
-    for (j in 1:p) {
-      temp <- c(temp, X[i, j] * Z.t[i, ])
-    }
-    result[i, ] <- temp
-  }
-  XZ <- result
-  if (is.null(covariate)) {
-    cbind.X.total <- cbind(XZ, X)
-    groups <- c(rep(1:p, each = number.K), (p + 1):(p + p))
-  } else {
-    cbind.X.total <- cbind(XZ, X, covariate)
-    groups <- c(rep(1:p, each = number.K), (p + 1):(p + p + p1))
-  }
-  
-  if (!categorical) {
-    # If y is not categorical, run without family argument
-    cv_fit <- sparsegl::cv.sparsegl(
-      cbind.X.total, y, group = groups, nfolds = nfold
+
+  if (inputs$p_hat > 0L) {
+    h2o::h2o.init()
+    training_frame <- h2o::as.h2o(inputs$X)
+    ae_model <- h2o::h2o.deeplearning(
+      x = seq_len(ncol(inputs$X)),
+      training_frame = training_frame,
+      ignore_const_cols = FALSE,
+      activation = "Tanh",
+      hidden = inputs$p_hat,
+      reproducible = TRUE,
+      seed = 1,
+      autoencoder = TRUE
     )
-  } else {
-    # Check that y has exactly two levels for a binomial model
-    if (length(unique(y)) != 2) {
-      stop("Error: For a binomial model, y must have exactly two levels.")
+    factors <- as.matrix(h2o::h2o.deepfeatures(
+      ae_model, training_frame, layer = 1
+    ))
+    if (!identical(dim(factors), c(nrow(inputs$X), inputs$p_hat))) {
+      stop("The autoencoder returned an unexpected factor-matrix dimension.")
     }
-    cv_fit <- sparsegl::cv.sparsegl(
-      cbind.X.total, y, group = groups, nfolds = nfold,
-      family = "binomial"
-    )
+  } else {
+    ae_model <- NULL
+    factors <- matrix(numeric(), nrow = nrow(inputs$X), ncol = 0L)
   }
-  beta <- stats::coef(cv_fit, s = "lambda.min")
+  regression <- .lfvcr_fit_model(inputs, factors)
 
   return(list(
+    p_hat = inputs$p_hat,
     autoencoder = ae_model,
-    factors = Z.t,
-    model = cv_fit,
-    beta = beta
+    factors = factors,
+    model = regression$model,
+    beta = regression$beta,
+    outcome_levels = regression$outcome_levels
   ))
 }
 

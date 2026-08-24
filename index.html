@@ -51,7 +51,7 @@
 <li>
 <code><a href="reference/LF_VCR.html">LF_VCR()</a></code> first estimates the number of factors (<code>p_hat</code>) with <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code>, then extracts those factors using unscaled PCA (<code>scale. = FALSE</code>).</li>
 <li>
-<code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> estimates factors with a single-hidden-layer autoencoder.</li>
+<code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> uses the same <code><a href="https://rdrr.io/pkg/GrFA/man/est_num.html" class="external-link">GrFA::est_num()</a></code> estimate as the width of a single-hidden-layer autoencoder, so <code>number.K</code> does not need to be supplied.</li>
 </ul>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -85,7 +85,7 @@
 <span></span>
 <span><span class="va">fit</span><span class="op">$</span><span class="va">p_hat</span></span>
 <span><span class="va">fit</span><span class="op">$</span><span class="va">beta</span></span></code></pre></div>
-<p>For a binary outcome, set <code>categorical = TRUE</code> and provide an outcome with exactly two distinct values. Additional adjustment variables can be supplied through <code>covariate</code>.</p>
+<p>For a binary outcome, set <code>categorical = TRUE</code> and provide an outcome with exactly two distinct values. The second factor level is modeled as 1 and the level order is returned in <code>outcome_levels</code>. Additional adjustment variables can be supplied through <code>covariate</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
@@ -114,7 +114,7 @@
 </tr>
 </tbody>
 </table>
-<p><code><a href="reference/LF_VCR.html">LF_VCR()</a></code> returns the estimated <code>p_hat</code>, PCA factors, PCA fit, cross-validated sparse group lasso model, and coefficients at <code>lambda.min</code>. <code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> returns the corresponding autoencoder and regression results.</p>
+<p><code><a href="reference/LF_VCR.html">LF_VCR()</a></code> returns the estimated <code>p_hat</code>, PCA factors, PCA fit, cross-validated sparse group lasso model, and coefficients at <code>lambda.min</code>. <code><a href="reference/LF_VCR_ae.html">LF_VCR_ae()</a></code> returns the same <code>p_hat</code> together with the corresponding autoencoder and regression results. After factor extraction, both functions use the same factor-by-feature interactions, group assignments, and Gaussian/binomial model fitting code.</p>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>

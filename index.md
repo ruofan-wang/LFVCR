@@ -13,7 +13,10 @@ Two factor-extraction methods are available:
   [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html), then
   extracts those factors using unscaled PCA (`scale. = FALSE`).
 - [`LF_VCR_ae()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR_ae.md)
-  estimates factors with a single-hidden-layer autoencoder.
+  uses the same
+  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html)
+  estimate as the width of a single-hidden-layer autoencoder, so
+  `number.K` does not need to be supplied.
 
 ## Installation
 
@@ -51,8 +54,9 @@ fit$beta
 ```
 
 For a binary outcome, set `categorical = TRUE` and provide an outcome
-with exactly two distinct values. Additional adjustment variables can be
-supplied through `covariate`.
+with exactly two distinct values. The second factor level is modeled as
+1 and the level order is returned in `outcome_levels`. Additional
+adjustment variables can be supplied through `covariate`.
 
 ## Main Functions
 
@@ -65,7 +69,10 @@ supplied through `covariate`.
 returns the estimated `p_hat`, PCA factors, PCA fit, cross-validated
 sparse group lasso model, and coefficients at `lambda.min`.
 [`LF_VCR_ae()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR_ae.md)
-returns the corresponding autoencoder and regression results.
+returns the same `p_hat` together with the corresponding autoencoder and
+regression results. After factor extraction, both functions use the same
+factor-by-feature interactions, group assignments, and Gaussian/binomial
+model fitting code.
 
 ## Documentation
 

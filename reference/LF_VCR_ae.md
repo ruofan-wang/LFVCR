@@ -1,15 +1,34 @@
 # Fit LF-VCR with autoencoder latent factors
 
-Extracts latent factors with an H2O autoencoder, constructs
-factor-by-feature interactions, and fits the expanded design with
-cross-validated sparse group lasso.
+Estimates the number of factors with
+[`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html), uses the
+resulting `p_hat` as the hidden-layer width of an H2O autoencoder,
+constructs the same factor-by-feature interactions as
+[`LF_VCR()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR.md),
+and fits the same cross-validated sparse group lasso model.
 
 ## Usage
 
 ``` r
-LF_VCR_ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
+LF_VCR_ae(
+  X,
+  y,
+  covariate = NULL,
+  nfold = 10,
+  kmax = 8,
+  factor_criterion = "BIC3",
+  categorical = FALSE
+)
 
-LF_VCR.ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
+LF_VCR.ae(
+  X,
+  y,
+  covariate = NULL,
+  nfold = 10,
+  kmax = 8,
+  factor_criterion = "BIC3",
+  categorical = FALSE
+)
 ```
 
 ## Arguments
@@ -22,10 +41,6 @@ LF_VCR.ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
 
   A numeric outcome vector with one value per row of `X`.
 
-- number.K:
-
-  The number of autoencoder latent factors to extract.
-
 - covariate:
 
   An optional matrix of adjustment covariates.
@@ -35,25 +50,41 @@ LF_VCR.ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
   The number of cross-validation folds used by
   [`sparsegl::cv.sparsegl()`](https://dajmcdon.github.io/sparsegl/reference/cv.sparsegl.html).
 
+- kmax:
+
+  The maximum number of factors considered by
+  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html).
+
+- factor_criterion:
+
+  The criterion passed to
+  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html) when
+  estimating `p_hat`. The default is `"BIC3"`.
+
 - categorical:
 
   Logical; use a binomial model when `TRUE` and a Gaussian model when
-  `FALSE`.
+  `FALSE`. For a binary outcome, the second factor level is modeled as 1
+  and both levels are returned in `outcome_levels`.
 
 ## Value
 
-A list containing the fitted autoencoder `autoencoder`, extracted
-`factors`, cross-validated sparse group lasso `model`, and its `beta`
-coefficients at `lambda.min`.
+A list containing the estimated factor count `p_hat`, fitted
+`autoencoder`, extracted `factors`, cross-validated sparse group lasso
+`model`, its `beta` coefficients at `lambda.min`, and binary
+`outcome_levels` when applicable.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 set.seed(1)
-X <- matrix(rnorm(1000), nrow = 100)
-y <- X[, 1] + rnorm(100)
-fit <- LF_VCR_ae(X, y, number.K = 2, nfold = 5)
+F <- matrix(rnorm(200), nrow = 100)
+L <- matrix(rnorm(40), nrow = 20)
+X <- F %*% t(L) + matrix(rnorm(2000, sd = 0.3), nrow = 100)
+y <- F[, 1] + rnorm(100)
+fit <- LF_VCR_ae(X, y, nfold = 5)
+fit$p_hat
 fit$beta
 } # }
 ```

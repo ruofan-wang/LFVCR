@@ -53,13 +53,15 @@ LF_VCR(
 - categorical:
 
   Logical; use a binomial model when `TRUE` and a Gaussian model when
-  `FALSE`.
+  `FALSE`. For a binary outcome, the second factor level is modeled as 1
+  and both levels are returned in `outcome_levels`.
 
 ## Value
 
 A list containing the estimated factor count `p_hat`, extracted PCA
 `factors`, fitted `pca` object, cross-validated sparse group lasso
-`model`, and its `beta` coefficients at `lambda.min`.
+`model`, its `beta` coefficients at `lambda.min`, and binary
+`outcome_levels` when applicable.
 
 ## Examples
 

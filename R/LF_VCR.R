@@ -19,7 +19,7 @@
 #'   [GrFA::est_num()] when `p_hat = NULL`. The default is 15. If the data have
 #'   fewer dimensions, the largest allowable value is used.
 #' @param factor_criterion The criterion passed to [GrFA::est_num()] when
-#'   estimating `p_hat`. The default is `"BIC3"`.
+#'   estimating `p_hat`. The default is `"IC2"`.
 #' @param categorical Logical; use a binomial model when `TRUE` and a Gaussian
 #'   model when `FALSE`. For a binary outcome, the second factor level is
 #'   modeled as 1 and both levels are returned in `outcome_levels`.
@@ -44,7 +44,7 @@
 #' }
 LF_VCR <- function(X, y, covariate = NULL, nfold = 10, p_hat = NULL,
                    kmax = 15,
-                   factor_criterion = "BIC3", categorical = FALSE) {
+                   factor_criterion = "IC2", categorical = FALSE) {
   inputs <- .lfvcr_prepare_inputs(
     X, y, covariate, nfold, p_hat, kmax, factor_criterion, categorical
   )

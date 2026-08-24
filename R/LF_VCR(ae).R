@@ -29,7 +29,7 @@
 #' }
 LF_VCR_ae <- function(X, y, covariate = NULL, nfold = 10, p_hat = NULL,
                       kmax = 15,
-                      factor_criterion = "BIC3", categorical = FALSE) {
+                      factor_criterion = "IC2", categorical = FALSE) {
   inputs <- .lfvcr_prepare_inputs(
     X, y, covariate, nfold, p_hat, kmax, factor_criterion, categorical
   )

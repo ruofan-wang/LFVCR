@@ -11,7 +11,7 @@ LF_VCR(
   nfold = 10,
   p_hat = NULL,
   kmax = 15,
-  factor_criterion = "BIC3",
+  factor_criterion = "IC2",
   categorical = FALSE
 )
 }
@@ -35,7 +35,7 @@ value is supplied, automatic factor-number estimation is skipped.}
 fewer dimensions, the largest allowable value is used.}
 
 \item{factor_criterion}{The criterion passed to \code{\link[GrFA:est_num]{GrFA::est_num()}} when
-estimating \code{p_hat}. The default is \code{"BIC3"}.}
+estimating \code{p_hat}. The default is \code{"IC2"}.}
 
 \item{categorical}{Logical; use a binomial model when \code{TRUE} and a Gaussian
 model when \code{FALSE}. For a binary outcome, the second factor level is

@@ -7,25 +7,9 @@ cross-validated sparse group lasso.
 ## Usage
 
 ``` r
-LF_VCR_ae(
-  X,
-  y,
-  number.K,
-  covariate = NULL,
-  nfold = 10,
-  matrix = "vad",
-  categorical = FALSE
-)
+LF_VCR_ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
 
-LF_VCR.ae(
-  X,
-  y,
-  number.K,
-  covariate = NULL,
-  nfold = 10,
-  matrix = "vad",
-  categorical = FALSE
-)
+LF_VCR.ae(X, y, number.K, covariate = NULL, nfold = 10, categorical = FALSE)
 ```
 
 ## Arguments
@@ -40,7 +24,7 @@ LF_VCR.ae(
 
 - number.K:
 
-  The number of latent factors to extract.
+  The number of autoencoder latent factors to extract.
 
 - covariate:
 
@@ -51,11 +35,6 @@ LF_VCR.ae(
   The number of cross-validation folds used by
   [`sparsegl::cv.sparsegl()`](https://dajmcdon.github.io/sparsegl/reference/cv.sparsegl.html).
 
-- matrix:
-
-  The POET thresholding scale: `"cor"` for the correlation matrix or
-  `"vad"` for the covariance matrix.
-
 - categorical:
 
   Logical; use a binomial model when `TRUE` and a Gaussian model when
@@ -63,8 +42,9 @@ LF_VCR.ae(
 
 ## Value
 
-A list containing the cross-validated sparse group lasso `model` and its
-`beta` coefficients at `lambda.min`.
+A list containing the fitted autoencoder `autoencoder`, extracted
+`factors`, cross-validated sparse group lasso `model`, and its `beta`
+coefficients at `lambda.min`.
 
 ## Examples
 

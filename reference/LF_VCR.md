@@ -1,8 +1,10 @@
-# Fit LF-VCR with POET latent factors
+# Fit LF-VCR with PCA latent factors
 
-Extracts latent factors with Principal Orthogonal complEment
-Thresholding (POET), constructs factor-by-feature interactions, and fits
-the expanded design with cross-validated sparse group lasso.
+Estimates the number of factors with
+[`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html), extracts
+that many principal components without scaling the predictors,
+constructs factor-by-feature interactions, and fits the expanded design
+with cross-validated sparse group lasso.
 
 ## Usage
 
@@ -10,10 +12,10 @@ the expanded design with cross-validated sparse group lasso.
 LF_VCR(
   X,
   y,
-  number.K,
   covariate = NULL,
   nfold = 10,
-  matrix = "vad",
+  kmax = 8,
+  factor_criterion = "BIC3",
   categorical = FALSE
 )
 ```
@@ -28,10 +30,6 @@ LF_VCR(
 
   A numeric outcome vector with one value per row of `X`.
 
-- number.K:
-
-  The number of latent factors to extract.
-
 - covariate:
 
   An optional matrix of adjustment covariates.
@@ -41,10 +39,16 @@ LF_VCR(
   The number of cross-validation folds used by
   [`sparsegl::cv.sparsegl()`](https://dajmcdon.github.io/sparsegl/reference/cv.sparsegl.html).
 
-- matrix:
+- kmax:
 
-  The POET thresholding scale: `"cor"` for the correlation matrix or
-  `"vad"` for the covariance matrix.
+  The maximum number of factors considered by
+  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html).
+
+- factor_criterion:
+
+  The criterion passed to
+  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html) when
+  estimating `p_hat`. The default is `"BIC3"`.
 
 - categorical:
 
@@ -53,17 +57,21 @@ LF_VCR(
 
 ## Value
 
-A list containing the cross-validated sparse group lasso `model` and its
-`beta` coefficients at `lambda.min`.
+A list containing the estimated factor count `p_hat`, extracted PCA
+`factors`, fitted `pca` object, cross-validated sparse group lasso
+`model`, and its `beta` coefficients at `lambda.min`.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 set.seed(1)
-X <- matrix(rnorm(1000), nrow = 100)
-y <- X[, 1] + rnorm(100)
-fit <- LF_VCR(X, y, number.K = 2, nfold = 5)
+F <- matrix(rnorm(200), nrow = 100)
+L <- matrix(rnorm(40), nrow = 20)
+X <- F %*% t(L) + matrix(rnorm(2000, sd = 0.3), nrow = 100)
+y <- F[, 1] + rnorm(100)
+fit <- LF_VCR(X, y, nfold = 5)
+fit$p_hat
 fit$beta
 } # }
 ```

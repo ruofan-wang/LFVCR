@@ -9,8 +9,9 @@ expanded design with sparse group lasso.
 Two factor-extraction methods are available:
 
 - [`LF_VCR()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR.md)
-  estimates factors with Principal Orthogonal complEment Thresholding
-  (POET).
+  first estimates the number of factors (`p_hat`) with
+  [`GrFA::est_num()`](https://rdrr.io/pkg/GrFA/man/est_num.html), then
+  extracts those factors using unscaled PCA (`scale. = FALSE`).
 - [`LF_VCR_ae()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR_ae.md)
   estimates factors with a single-hidden-layer autoencoder.
 
@@ -29,19 +30,23 @@ remotes::install_github("ruofan-wang/LFVCR")
 library(LFVCR)
 
 set.seed(1)
-n <- 100
-p <- 20
-X <- matrix(rnorm(n * p), nrow = n, ncol = p)
-y <- 0.8 * X[, 1] - 0.5 * X[, 2] + rnorm(n)
+n <- 120
+p <- 30
+true_factors <- matrix(rnorm(n * 2), nrow = n)
+loadings <- matrix(rnorm(p * 2), nrow = p)
+X <- true_factors %*% t(loadings) +
+  matrix(rnorm(n * p, sd = 0.35), nrow = n)
+y <- true_factors[, 1] - 0.5 * true_factors[, 2] + rnorm(n)
 
 fit <- LF_VCR(
   X = X,
   y = y,
-  number.K = 2,
   nfold = 5,
-  matrix = "vad"
+  kmax = 8,
+  factor_criterion = "BIC3"
 )
 
+fit$p_hat
 fit$beta
 ```
 
@@ -53,11 +58,14 @@ supplied through `covariate`.
 
 | Function | Latent-factor method | Model |
 |----|----|----|
-| [`LF_VCR()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR.md) | POET factor model | Sparse group lasso |
+| [`LF_VCR()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR.md) | PCA without scaling; `p_hat` estimated by GrFA | Sparse group lasso |
 | [`LF_VCR_ae()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR_ae.md) | H2O autoencoder | Sparse group lasso |
 
-Both functions return the cross-validated sparse group lasso model and
-its coefficients at `lambda.min`.
+[`LF_VCR()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR.md)
+returns the estimated `p_hat`, PCA factors, PCA fit, cross-validated
+sparse group lasso model, and coefficients at `lambda.min`.
+[`LF_VCR_ae()`](https://ruofan-wang.github.io/LFVCR/reference/LF_VCR_ae.md)
+returns the corresponding autoencoder and regression results.
 
 ## Documentation
 

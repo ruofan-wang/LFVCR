@@ -1,11 +1,25 @@
 Package: LFVCR
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Latent Factor Varying-Coefficient Regression
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: person(
+    given = "Ruofan",
+    family = "Wang",
+    role = c("aut", "cre"),
+    email = "ppeanutsss@gmail.com")
+Description: Extracts latent factors from high-dimensional predictors and
+    combines factor-by-feature interactions with the original predictors in a
+    sparse group lasso model. Factor extraction is available through either
+    Principal Orthogonal complEment Thresholding (POET) or an autoencoder.
+License: GPL-3
 Encoding: UTF-8
-LazyData: true
+Imports:
+    h2o,
+    POET,
+    sparsegl,
+    stats
+URL: https://ruofan-wang.github.io/LFVCR/,
+    https://github.com/ruofan-wang/LFVCR
+BugReports: https://github.com/ruofan-wang/LFVCR/issues
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3

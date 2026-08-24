@@ -1,0 +1,19 @@
+url: https://ruofan-wang.github.io/LFVCR/
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [home, reference]
+    right: [github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/ruofan-wang/LFVCR
+      aria-label: GitHub
+
+reference:
+  - title: Latent factor varying-coefficient regression
+    contents:
+      - LF_VCR
+      - LF_VCR_ae

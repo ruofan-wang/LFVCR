@@ -240,3 +240,10 @@ original predictors and optional covariates.
 
 The complete function reference is available on the [LFVCR package
 website](https://ruofan-wang.github.io/LFVCR/).
+
+## Reference
+
+Wang R, Fang L, Wang Y, Jin J. Identifying Effect Modification of Latent
+Population Characteristics on Risk Factors with a Sparse Varying
+Coefficient Regression. *bioRxiv* 2024. doi:
+[10.1101/2024.11.30.626101](https://doi.org/10.1101/2024.11.30.626101)
